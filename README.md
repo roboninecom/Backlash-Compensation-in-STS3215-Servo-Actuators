@@ -9,15 +9,24 @@ The project demonstrates a practical method to eliminate mechanical backlash in 
 ## 📂 Project Structure
 
 ```text
-├── app.js                  # Main Node.js controller application
-├── sweepConfig.js          # Configuration for motion sequences (PID, angles, torque)
-├── TelemetryLogger.js      # Module for high-frequency data logging
-├── config.js               # Serial port configuration
-├── paper/                  # LaTeX source code of the article and figures
-├── Utilities/              # Python scripts for data analysis and visualization
-│   ├── log_calc.py         # Calculates backlash statistics
-│   └── log_viz.py          # Generates graphs from telemetry CSVs
-└── logs/                   # output directory for telemetry data (CSV)
+├── cad/                         # Hardware design files (.step and .stl)
+├── logs/                        # Output directory for telemetry data (CSV)
+├── paper/                       # LaTeX source code of the article and figures
+├── software/
+│   ├── backlash_test/
+│   │   ├── .env                     # Environment variables
+│   │   ├── .gitignore               # Git ignore rules
+│   │   ├── app.js                   # Main Node.js controller application
+│   │   ├── config.js                # Serial port configuration
+│   │   ├── package.json             # Node.js dependencies and scripts
+│   │   ├── sweepConfig.js           # Configuration for motion sequences
+│   │   └── TelemetryLogger.js       # Module for CSV data logging
+│   ├── logs_calculation/
+│   │   ├── log_calc.py              # Calculates backlash statistics
+│   │   ├── log_calc_single.py       # Single-file backlash calculation
+│   └── logs_visualisation/
+│       ├── log_viz.py               # Generates graphs from telemetry CSVs (batch)
+│       ├── log_viz_single.py        # Generates graphs from a single CSV
 ```
 
 ## 🛠 Hardware Requirements
@@ -40,6 +49,8 @@ The Node.js application manages the servos, executes motion profiles, and logs t
 **Prerequisites:** Node.js (v14+), NPM.
 
 ```bash
+cd software/backlash_test
+
 # Install dependencies
 npm install
 
@@ -75,10 +86,10 @@ pip install pandas matplotlib numpy
 
 ```bash
 # Visualize a specific log file
-python Utilities/log_viz.py logs/motor_telemetry.csv
+python software/logs_visualisation/log_viz.py logs/motor_telemetry.csv
 
 # Calculate backlash statistics
-python Utilities/log_calc.py logs/motor_telemetry.csv
+python software/logs_calculation/log_calc.py logs/motor_telemetry.csv
 ```
 
 ## 📄 Research Paper
