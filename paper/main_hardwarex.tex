@@ -129,7 +129,7 @@ This open-source hardware system provides a practical, low-cost solution using a
 The system consists of:
 \begin{enumerate}
     \item \textbf{Dual-servo compensation unit:} Two STS3215 servos with 3D-printed mounting bracket and shaft coupling
-    \item \textbf{Control software:} Python library for synchronized servo control with pretension management
+    \item \textbf{Control software:} Nodejs application for synchronized servo control with pretension management
     \item \textbf{Test stand (optional):} Mechanical fixture for backlash measurement and validation
 \end{enumerate}
 
@@ -226,43 +226,51 @@ where $b_{\mathrm{eff}}$ includes the controller deadband and mechanical play. T
 
 \begin{table}[H]
 \centering
-\caption{Design files overview.}
+\caption{Project file structure overview.}
 \label{tab:designfiles}
 \small
 \begin{tabular}{llll}
 \toprule
-\textbf{Design file name} & \textbf{File type} & \textbf{License} & \textbf{Location} \\
+\textbf{File name} & \textbf{File type} & \textbf{License} & \textbf{Location} \\
 \midrule
 \multicolumn{4}{l}{\textit{Mechanical Design Files}} \\
 \midrule
-servo\_holder.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
-servo\_holder.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
-shaft\_coupler.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
-shaft\_coupler.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
-mounting\_plate.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
-mounting\_plate.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
-test\_lever\_100mm.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
+servo\_holder\_dual.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
+servo\_holder\_dual.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
+servo\_holder\_single.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
+servo\_holder\_single.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
+test\_lever\_100mm\_dual.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
+test\_lever\_100mm\_dual.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
+test\_lever\_100mm\_single.step & CAD (STEP) & CERN-OHL-P & /cad/ \\
+test\_lever\_100mm\_single.stl & 3D Print (STL) & CERN-OHL-P & /cad/ \\
 \midrule
-\multicolumn{4}{l}{\textit{Test Stand Design Files}} \\
+\multicolumn{4}{l}{\textit{Software -- Data Acquisition}} \\
 \midrule
-teststand\_base.step & CAD (STEP) & CERN-OHL-P & /cad/teststand/ \\
-teststand\_base.stl & 3D Print (STL) & CERN-OHL-P & /cad/teststand/ \\
-puller\_mount.stl & 3D Print (STL) & CERN-OHL-P & /cad/teststand/ \\
+app.js & Node.js application & MIT & /software/backlash\_test/ \\
+config.js & Node.js module & MIT & /software/backlash\_test/ \\
+sweepConfig.js & Node.js module & MIT & /software/backlash\_test/ \\
+TelemetryLogger.js & Node.js module & MIT & /software/backlash\_test/ \\
+package.json & Build configuration & MIT & /software/backlash\_test/ \\
 \midrule
-\multicolumn{4}{l}{\textit{Software}} \\
+\multicolumn{4}{l}{\textit{Software -- Data Processing}} \\
 \midrule
-sts3215\_control.py & Python module & MIT & /software/ \\
-dual\_servo.py & Python module & MIT & /software/ \\
-backlash\_test.py & Python script & MIT & /software/ \\
-calibration.py & Python script & MIT & /software/ \\
+log\_calc.py & Python script & MIT & /software/logs\_calculation/ \\
+log\_calc\_single.py & Python script & MIT & /software/logs\_calculation/ \\
 \midrule
-\multicolumn{4}{l}{\textit{Documentation}} \\
+\multicolumn{4}{l}{\textit{Software -- Data Visualisation}} \\
 \midrule
-assembly\_guide.pdf & Documentation & CC BY 4.0 & /docs/ \\
-wiring\_diagram.pdf & Schematic & CC BY 4.0 & /docs/ \\
+log\_viz.py & Python script & MIT & /software/logs\_visualisation/ \\
+log\_viz\_single.py & Python script & MIT & /software/logs\_visualisation/ \\
+\midrule
+\multicolumn{4}{l}{\textit{Project Data and Documentation}} \\
+\midrule
+logs/ & Telemetry CSV output & -- & /logs/ \\
+paper/ & LaTeX source files & -- & /paper/ \\
+README.md & Project documentation & MIT & / \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 
 %==============================================================================
 \section{Bill of Materials}
