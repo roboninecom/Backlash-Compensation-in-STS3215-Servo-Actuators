@@ -1,14 +1,12 @@
 "use strict";
 
-const path = require('path')
+const path = require('path');
+
 const { StsInstruction, StsRegisterSchemaKeys, StsManager, StsMotor } = require('StsServo');
-
-const { serialConfig } = require('./config')
 const { TelemetryLogger } = require('./TelemetryLogger');
-const { motorSweepConfigs } = require('./sweepConfig');
 
-const DEFAULT_LOG_FILE = path.join(__dirname, 'logs', 'motor_telemetry.csv');
-const LOGGING_INTERVAL_MS = 100;
+const { serialConfig, logConfig } = require('./config');
+const { motorSweepConfigs } = require('./sweepConfig');
 
 const {
   CURRENT_POSITION,
@@ -22,16 +20,10 @@ const {
 
 const motors = [];
 const motorsById = new Map();
-let sweepStarted = false;
 const motorStates = new Map();
-const loggingGroups = new Map();
+let sweepStarted = false;
 let telemetryLogTimer = null;
-
-
-function resolveLogPath(logPath) {
-  if (!logPath) return null;
-  return path.isAbsolute(logPath) ? logPath : path.join(__dirname, logPath);
-}
+let logger = null;
 
 function buildHeaders(motorIds) {
   const headers = ['timestamp'];
@@ -50,80 +42,51 @@ function buildHeaders(motorIds) {
   return headers;
 }
 
-function registerLoggingTarget(motorId, logFile) {
-  if (!motorId || !logFile) return;
-
-  let group = loggingGroups.get(logFile);
-  if (!group) {
-    group = { motorIds: [], logger: null };
-    loggingGroups.set(logFile, group);
-  }
-
-  if (!group.motorIds.includes(motorId)) {
-    group.motorIds.push(motorId);
-  }
-}
-
-function initializeLoggingGroups() {
-  loggingGroups.forEach((group, filePath) => {
-    if (!group.logger) {
-      const headers = buildHeaders(group.motorIds);
-      group.logger = new TelemetryLogger(filePath, headers);
-    }
-  });
-}
-
-function startTelemetryLogging() {
-  if (telemetryLogTimer || loggingGroups.size === 0) return;
-
-  const intervalMs = LOGGING_INTERVAL_MS || 500;
+function startTelemetryLogging(motorIds) {
+  const intervalMs = logConfig.loggingIntervalMs || 500;
 
   telemetryLogTimer = setInterval(() => {
-    loggingGroups.forEach((group, filePath) => {
-      if (!group.logger || group.motorIds.length === 0) return;
+    const timestamp = new Date().toISOString();
 
-      const timestamp = new Date().toISOString();
+    const row = [timestamp];
+    let hasData = false;
 
-      const row = [timestamp];
-      let hasData = false;
+    for (const motorId of motorIds) {
+      const state = motorStates.get(motorId);
+      const motor = motorsById.get(motorId);
+      const telemetry = motor?.lastTelemetry ?? {};
+      const targetPosition = state?.lastCommanded ?? null;
 
-      for (const motorId of group.motorIds) {
-        const state = motorStates.get(motorId);
-        const motor = motorsById.get(motorId);
-        const telemetry = motor?.lastTelemetry ?? {};
-        const targetPosition = state?.lastCommanded ?? null;
+      row.push(
+        targetPosition ?? '',
+        telemetry?.[CURRENT_POSITION] ?? '',
+        telemetry?.[CURRENT_SPEED] ?? '',
+        telemetry?.[CURRENT_LOAD] ?? '',
+        telemetry?.[CURRENT_CURRENT] ?? '',
+        telemetry?.[CURRENT_TEMPERATURE] ?? '',
+        telemetry?.[SERVO_STATUS] ?? '',
+        telemetry?.[MOVING_STATUS] ?? ''
+      );
 
-        row.push(
-          targetPosition ?? '',
-          telemetry?.[CURRENT_POSITION] ?? '',
-          telemetry?.[CURRENT_SPEED] ?? '',
-          telemetry?.[CURRENT_LOAD] ?? '',
-          telemetry?.[CURRENT_CURRENT] ?? '',
-          telemetry?.[CURRENT_TEMPERATURE] ?? '',
-          telemetry?.[SERVO_STATUS] ?? '',
-          telemetry?.[MOVING_STATUS] ?? ''
-        );
-
-        if (
-          targetPosition != null ||
-          telemetry?.[CURRENT_POSITION] != null ||
-          telemetry?.[CURRENT_SPEED] != null ||
-          telemetry?.[CURRENT_LOAD] != null ||
-          telemetry?.[CURRENT_CURRENT] != null ||
-          telemetry?.[CURRENT_TEMPERATURE] != null ||
-          telemetry?.[SERVO_STATUS] != null ||
-          telemetry?.[MOVING_STATUS] != null
-        ) {
-          hasData = true;
-        }
+      if (
+        targetPosition != null ||
+        telemetry?.[CURRENT_POSITION] != null ||
+        telemetry?.[CURRENT_SPEED] != null ||
+        telemetry?.[CURRENT_LOAD] != null ||
+        telemetry?.[CURRENT_CURRENT] != null ||
+        telemetry?.[CURRENT_TEMPERATURE] != null ||
+        telemetry?.[SERVO_STATUS] != null ||
+        telemetry?.[MOVING_STATUS] != null
+      ) {
+        hasData = true;
       }
+    }
 
-      if (hasData) {
-        group.logger.appendRow(row).catch((err) => {
-          console.error(`Telemetry log write failed (${filePath}):`, err);
-        });
-      }
-    });
+    if (hasData) {
+      logger.appendRow(row).catch((err) => {
+        console.error(`Telemetry log write failed (${filePath}):`, err);
+      });
+    }
   }, intervalMs);
 }
 
@@ -153,22 +116,18 @@ function startSweepTest(stsManager) {
       return;
     }
 
-    const resolvedLogPath = resolveLogPath(DEFAULT_LOG_FILE);
     const targetIds = [cfg.index];
     let positionIndex = 0;
     let initialized = false;
 
     const state = motorStates.get(cfg.index) ?? {
       config: cfg,
-      logFile: resolvedLogPath,
       lastCommanded: null,
       lastCommandedAt: null,
       timer: null
     };
 
-    state.logFile = resolvedLogPath;
     motorStates.set(cfg.index, state);
-    registerLoggingTarget(cfg.index, state.logFile);
 
     const sanitizeInterval = (value) => {
       const parsed = Number(value);
@@ -233,9 +192,6 @@ function startSweepTest(stsManager) {
 
     scheduleNextMove(cfg.startDelayMs ?? 0);
   });
-
-  initializeLoggingGroups();
-  startTelemetryLogging(stsManager);
 }
 
 async function init() {
@@ -254,6 +210,12 @@ async function init() {
           motorsById.set(id, motor);
         }
       }
+
+      const headers = buildHeaders(ids);
+      const filePath = path.isAbsolute(logConfig.logFilePath) ? logConfig.logFilePath : path.join(__dirname, logConfig.logFilePath);
+      logger = new TelemetryLogger(filePath, headers);
+      startTelemetryLogging(ids);
+
       const allConfiguredMotorsPresent = motorSweepConfigs.every(cfg => motorsById.has(cfg.index));
       if (!sweepStarted && allConfiguredMotorsPresent) {
         startSweepTest(stsManager);
@@ -261,7 +223,6 @@ async function init() {
     });
     
     await sts.ConnectFailsafe();
-    
   } catch (err) {
     console.error("Initialization failed:", err);
   }

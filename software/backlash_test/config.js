@@ -21,4 +21,9 @@ const serialConfig = {
   sendRetryInterval: parseInt(SERIAL_SEND_RETRY_INTERVAL, 10) || 500,
 };
 
-module.exports = { serialConfig };
+const logConfig = {
+  logFilePath: process.env.LOG_FILE_PATH || 'logs/motor_telemetry.csv',
+  loggingIntervalMs: parseInt(process.env.LOGGING_INTERVAL_MS, 10) || 100,
+};
+
+module.exports = { serialConfig, logConfig };

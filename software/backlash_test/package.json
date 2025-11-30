@@ -8,7 +8,7 @@
   "author": "bkotov",
   "license": "ISC",
   "dependencies": {
-    "@arm/sts-servo": "1.0.0",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "StsServo": "1.0.0"
   }
 }

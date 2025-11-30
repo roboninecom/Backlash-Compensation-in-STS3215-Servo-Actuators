@@ -1,6 +1,5 @@
 "use strict";
 
-
 const HOME_POSITION = 2047;
 
 const SWEEP_POSITION_1_1 = 1747;
@@ -16,7 +15,6 @@ const motorSweepConfigs = [
     speed: 1000,
     accel: 20,
     startDelayMs: 0,
-    logFile: DEFAULT_LOG_FILE
   },
   {
     index: 2,
@@ -25,7 +23,6 @@ const motorSweepConfigs = [
     speed: 1000,
     accel: 20,
     startDelayMs: 0,
-    logFile: DEFAULT_LOG_FILE
   },
   {
     index: 3,
@@ -34,7 +31,6 @@ const motorSweepConfigs = [
     speed: 3000,
     accel: 120,
     startDelayMs: 0,
-    logFile: DEFAULT_LOG_FILE
   },
   {
     index: 4,
@@ -43,7 +39,6 @@ const motorSweepConfigs = [
     speed: 3000,
     accel: 120,
     startDelayMs: 0,
-    logFile: DEFAULT_LOG_FILE
   }
 ];
 
